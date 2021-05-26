@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html">
+    <h2 id="harbour-sql-database-sample-code">Harbour SQL database sample code</h2>
+    <p>Connecting &amp; communicating with DB</p>
+    <blockquote>
+      <p>import mysql.connector</p>
+      <p>mydb = mysql.connector.connect( host=“localhost”, user=“<em>yourusername</em>”,
+        password=“<em>yourpassword</em>”, database=“HarbourDB” )<br>
+        #Querying<br>
+        mycursor.execute(“SELECT * FROM ports_master”)<br>
+        myresult = mycursor.fetchall()<br>
+        #Inserting<br>
+        mycursor = mydb.cursor()<br>
+        sql = “INSERT … (SQL code here)”<br>
+        val = # (DATA TO INSERT TO DB)<br>
+        mycursor.execute(sql, val)<br>
+        mydb.commit()</p>
+    </blockquote>
+    <h2 id="tables">Tables</h2>
+    <h3 id="ship-positions-table-to-be-populated-in-exercice">Ship positions table (to be populated in exercice)</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>lat</th>
+          <th>lon</th>
+          <th>timestamp</th>
+          <th>ship_id</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>3.1415</td>
+          <td>8.325</td>
+          <td>2019-06-17T14:30:00Z</td>
+          <td>95125</td>
+        </tr>
+        <tr>
+          <td>3.1405</td>
+          <td>8.338</td>
+          <td>2019-06-17T15:25:00Z</td>
+          <td>95125</td>
+        </tr>
+        <tr>
+          <td>…</td>
+          <td>…</td>
+          <td>…</td>
+          <td>…</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+
+</html>

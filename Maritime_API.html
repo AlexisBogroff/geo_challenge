@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__left">
+    <div class="stackedit__toc">
+
+      <ul>
+        <li><a href="#preligens-maritime-api-documentation">Preligens Maritime API documentation</a>
+          <ul>
+            <li><a href="#authentication">Authentication</a></li>
+            <li><a href="#ship-gps-positions">Ship GPS positions</a></li>
+          </ul>
+        </li>
+      </ul>
+
+    </div>
+  </div>
+  <div class="stackedit__right">
+    <div class="stackedit__html">
+      <h1 id="preligens-maritime-api-documentation">Preligens Maritime API documentation</h1>
+      <h2 id="authentication">Authentication</h2>
+      <h3 id="get-api-key">Get API key</h3>
+      <p>Get a key from your login and password for later use when calling the services.</p>
+      <pre><code>Request JSON schema: 
+- username: string
+- password: string 
+</code></pre>
+      <hr>
+      <p><strong>POST</strong> <a
+          href="https://preligens.com/marineapi/vfake/auth/getAPIkey">https://preligens.com/marineapi/vfake/auth/getAPIkey</a><br>
+        Example Payload:</p>
+      <blockquote>
+        <p>{<br>
+          “username”: “xxxx”,<br>
+          “password”: “yyyy”<br>
+          }</p>
+      </blockquote>
+      <hr>
+      <p><strong>Response codes</strong><br>
+        Code 200 : OK<br>
+        Code 400: Incorrect request<br>
+        Code 401: Unkown credentials</p>
+      <hr>
+      <p><strong>Sample response</strong></p>
+      <blockquote>
+        <p>{<br>
+          “APIkey:” PP-RR-EE-LL-II-GG-EE-NN-SS”,<br>
+          “validUntil”: “2021-10-01”<br>
+          }</p>
+      </blockquote>
+      <h2 id="ship-gps-positions">Ship GPS positions</h2>
+      <p>Get the GPS positions of detected ships in port.</p>
+      <h3 id="query-parameters">Query parameters</h3>
+      <blockquote>
+        <ul>
+          <li>port_ID : string.</li>
+          <li>Start time: string &lt; datetime &gt;</li>
+          <li>End time: string &lt; datetime &gt;</li>
+        </ul>
+      </blockquote>
+      <h3 id="header-parameters">Header parameters</h3>
+      <blockquote>
+        <ul>
+          <li>API Key: string</li>
+        </ul>
+      </blockquote>
+      <p><strong>GET</strong> <a
+          href="https://preligens.com/marineapi/vfake/auth/getShipPositions">https://preligens.com/marineapi/vfake/auth/getShipPositions</a>
+      </p>
+      <hr>
+      <p><strong>Response codes</strong><br>
+        Code 200 : OK<br>
+        Code 400: Incorrect request<br>
+        Code 401: Unkown credentials</p>
+      <hr>
+      <p><strong>Sample response</strong></p>
+      <blockquote>
+        <p>{“ship_positions”: [<br>
+          {“ship_ID”: “95125”,<br>
+          “coordinates” : [3.1415, 8.325],<br>
+          “timestamp” : “2019-06-17T14:30:00Z”},<br>
+          {“ship_ID”: “95125”,<br>
+          “coordinates” : [3.1405, 8.338],<br>
+          “timestamp” : “2019-06-17T14:50:00Z”},<br>
+          …<br>
+          {“ship_ID”: “68505”,<br>
+          “coordinates” : [3.1400, 8.340],<br>
+          “timestamp” : “2019-06-18T15:10:00Z”}<br>
+          ]<br>
+          }</p>
+      </blockquote>
+
+    </div>
+  </div>
+</body>
+
+</html>
