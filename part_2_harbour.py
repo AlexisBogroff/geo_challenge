@@ -1,29 +1,20 @@
 """
-Build main components for harbour management and
-ships movements tracking. Connect with Preligens (fake) REST API.
+Build main components for harbour management and ships movements tracking.
+Connect with Preligens (fake) Db and REST API.
 
 Classes:
-    Harbour
-    Pier
-    Berth
-    Ship
-    Movements
+    Api: connect to Preligens API, get credentials and ships positions
+    Berth: create Berth object
+    Db: connect to Preligens database, select and insert data
+    Harbour: create Harbour object
+    Movements: create Movements object to track ships positions
+    Pier: create Pier object
+    Ship: create Ship object
 """
 from datetime import datetime, timedelta
 import requests
 import pandas as pd
 import mysql.connector
-
-
-class Berth:
-    """
-    Berth object with its properties and availability
-    """
-    def __init__(self, length, equipements={}, is_empty=None):
-        self.length = length
-        self.equipements = equipements
-        self.is_empty = is_empty
-
 
 
 class Api:
@@ -36,23 +27,26 @@ class Api:
         self.api_key = None
 
 
-    @staticmethod
-    def _interpret_status_code(response, verbose=False):
-        """ Interpret Preligens API status code """
-        if response.status_code == 200:
-            status = 'OK'
-        elif response.status_code == 400:
-            status = 'Incorrect request'
-        elif response.status_code == 401:
-            status = 'Unkown credentials'
+    def _extract_response_values(self, response):
+        """
+        Extract response values
+
+        Args:
+            response: api response
+
+        Returns:
+            Response (str) or None in case of error
+        """
+        status = self._interpret_status_code(response)
+
+        if status == 'OK':
+            response = response.text
         else:
-            status = 'Unknown error'
+            response = None
 
-        if verbose:
-                print(status)
-        return status
+        return response
 
-    
+
     def _get_api_key(self, response):
         """
         Retrieve API key
@@ -81,26 +75,28 @@ class Api:
         response_values = self._extract_response_values(response)
         if response_values:
             try:
-                ships_positions = response_values['ship_positions']
-                ships_positions = pd.DataFrame(ships_positions)
-                return ships_positions
+                ships_pos = response_values['ship_positions']
+                ships_pos = pd.DataFrame(ships_pos)
+                return ships_pos
             except:
                 raise ValueError
 
 
-    def _extract_response_values(self, response):
-        """
-        Extract response values
-        
-        Args:
-            response: api response
+    @staticmethod
+    def _interpret_status_code(response, verbose=False):
+        """ Interpret Preligens API status code """
+        if response.status_code == 200:
+            status = 'OK'
+        elif response.status_code == 400:
+            status = 'Incorrect request'
+        elif response.status_code == 401:
+            status = 'Unkown credentials'
+        else:
+            status = 'Unknown error'
 
-        Returns:
-            Status phrase (str) or None in case of error
-        """
-        status = self._interpret_status_code(response)
-        if status == 'OK':
-            return response.text
+        if verbose:
+            print(status)
+        return status
 
 
     def get_api_key(self):
@@ -118,7 +114,7 @@ class Api:
     def get_ships_positions(self, port_id, start_time, end_time=None):
         """
         Retrieve ships positions from Preligens API
-        
+
         Args:
             port_id (str): id of the port
             start_time (datetime): request start time
@@ -126,7 +122,7 @@ class Api:
         """
         if not end_time:
             end_time = datetime.now()
-        
+
         URL = "https://preligens.com/marineapi/vfake/auth/getShipPositions"
         headers = {'API Key': self.api_key}
         payload = {
@@ -135,8 +131,19 @@ class Api:
             "End time": end_time,
         }
         response = requests.get(URL, headers=headers, params=payload)
-        ships_positions = self._get_ships_positions(response)
-        return ships_positions
+        ships_pos = self._get_ships_positions(response)
+        return ships_pos
+
+
+
+class Berth:
+    """
+    Berth object with its properties and availability
+    """
+    def __init__(self, length, equipements={}, is_empty=None):
+        self.length = length
+        self.equipements = equipements
+        self.is_empty = is_empty
 
 
 
@@ -176,16 +183,16 @@ class Db:
             insert (bool): type of query to build
         """
         assert insert is True
-        
+
         # Extract fields names
-        fields = [field for field in data.keys()]
-        pre_vals = ["%(" + field + ")s" for field in data.keys()]
-    
+        fields = list(data.columns)
+        pre_vals = ["%(" + field + ")s" for field in data.columns]
+
         # Build query
         query = f"INSERT INTO {table}(" + ", ".join(fields) + ") "
         query += "VALUES (" + ", ".join(pre_vals) + ")"
         return query
-        
+
 
     def _connect(self):
         """
@@ -198,7 +205,7 @@ class Db:
                        user="{self.user}", \
                        password="{self.pssd}", \
                        database="{self.db_name}"'
-        
+
         self._db = mysql.connector.connect(con_phrase)
 
 
@@ -222,7 +229,7 @@ class Db:
     def get_data(self, table=None, query=None, limit=100):
         """
         Retrieve data from Preligens REST API
-        
+
         Args:
             query (str): sql query
             table (str): table to query
@@ -233,7 +240,7 @@ class Db:
             otherwise, reopen a new connection for each call.
         """
         self._connect()
-        
+
         # Build query
         if not query:
             query = f"SELECT * FROM {table} LIMIT {limit}"
@@ -242,7 +249,7 @@ class Db:
         self._cur = self._db.cursor()
         self._cur.execute(query)
         result = self._cur.fetchall()
-        
+
         self._disconnect()
         return result
 
@@ -250,7 +257,7 @@ class Db:
     def push_data(self, table, data):
         """
         Insert data into Preligens Database using its REST API
-        
+
         Args:
             data (dict): data to insert into Preligens db. Should contain one
                          row only (implement DataFrames for multiple inserts)
@@ -265,12 +272,12 @@ class Db:
         # Build query
         query = self._build_query(table, data, insert=True)
         records = data.values.tolist()
-        
+
         # Execute insert query
         self._cur = self._db.cursor()
         self._cur.executemany(query, records)
         self._db.commit()
-        
+
         self._disconnect()
 
 
@@ -282,7 +289,7 @@ class Harbour:
     Can have 0 or multiple initial piers.
     """
     def __init__(self, piers=[]):
-        self.piers = piers 
+        self.piers = piers
 
 
 
@@ -294,7 +301,7 @@ class Movements:
     def __init__(self):
         self.movements = []
 
- 
+
 
 class Pier:
     """
@@ -312,7 +319,7 @@ class Ship:
     def __init__(self, name, ship_id, ship_type, length):
         self.name = name
         self.id = ship_id
-        self.type = ship_type 
+        self.type = ship_type
         self.length = length
 
 
@@ -324,8 +331,8 @@ if __name__ == "__main__":
     api.get_api_key()
     ships_positions = api.get_ships_positions(port_id='port_1',
                                               start_time=timedelta(weeks=-2))
-    
+
     # Push to Database
-    table = 'ship-positions-table-to-be-populated-in-exercice'
+    TABLE = 'ship-positions-table-to-be-populated-in-exercice'
     db = Db(user="alexis", password="pssd_test_db")
-    db.push_data(table, ships_positions)
+    db.push_data(TABLE, ships_positions)
