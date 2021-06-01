@@ -10,8 +10,8 @@ Classes:
     Movements
 """
 # import mysql.connector
+from datetime import datetime, timedelta
 import requests
-from datetime import datetime
 
 
 class Berth:
@@ -29,9 +29,8 @@ class Api:
     """
     Connector with Preligens (fake) API
     """
-
-    def __init__(self, username, password):
-        self.username = username
+    def __init__(self, user, password):
+        self.username = user
         self.password = password
         self.api_key = None
 
@@ -76,7 +75,7 @@ class Api:
             response: api response
 
         Returns:
-            list of ships positions in the following format:
+            List of dicts of ships positions in the following format:
             [
                 {“ship_ID”: “95125”,
                 “coordinates” : [3.1415, 8.325],
@@ -92,7 +91,8 @@ class Api:
         response_values = self._extract_response_values(response)
         if response_values:
             try:
-                return response_values['ship_positions']
+                ships_positions = response_values['ship_positions']
+                return ships_positions
             except:
                 raise ValueError
 
@@ -321,18 +321,21 @@ class Ship:
 
 
 if __name__ == "__main__":
-    # Debug
-    db = Db(user="alexis", password="pssd_test")
+    # Get ships positions from API
+    api = Api(user="alexis", password="pssd_test_api")
+    api.get_api_key()
+    ships_positions = api.get_ships_positions(port_id='port_1',
+                        start_time=timedelta(weeks=-2))
     
-    # Insert
+    # Push to Database
     data = {'lat': 3.1435,
             'lon': 8.345,
             'timestamp': '2019-06-17T14:30:00Z',
             'ship_id': 95125}
-
     table = 'ship-positions-table-to-be-populated-in-exercice'
-    
+    db = Db(user="alexis", password="pssd_test_db")
     db.push_data(table, data)
-    
+
+    # Debug
     query = db._build_query(table, data)
     print(f'\n{query}\n')
