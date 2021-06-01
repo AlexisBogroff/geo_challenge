@@ -9,9 +9,10 @@ Classes:
     Ship
     Movements
 """
-# import mysql.connector
 from datetime import datetime, timedelta
 import requests
+import pandas as pd
+import mysql.connector
 
 
 class Berth:
@@ -75,23 +76,13 @@ class Api:
             response: api response
 
         Returns:
-            List of dicts of ships positions in the following format:
-            [
-                {“ship_ID”: “95125”,
-                “coordinates” : [3.1415, 8.325],
-                “timestamp” : “2019-06-17T14:30:00Z”},
-
-                ...
-
-                {“ship_ID”: “68505”,
-                “coordinates” : [3.1400, 8.340],
-                “timestamp” : “2019-06-18T15:10:00Z”}
-            ]
+            DataFrame of ships positions
         """
         response_values = self._extract_response_values(response)
         if response_values:
             try:
                 ships_positions = response_values['ship_positions']
+                ships_positions = pd.DataFrame(ships_positions)
                 return ships_positions
             except:
                 raise ValueError
@@ -187,11 +178,11 @@ class Db:
         assert insert is True
         
         # Extract fields names
-        fields = [table + "." + field for field in data.keys()]
+        fields = [field for field in data.keys()]
         pre_vals = ["%(" + field + ")s" for field in data.keys()]
     
         # Build query
-        query = "INSERT INTO (" + ", ".join(fields) + ") "
+        query = f"INSERT INTO {table}(" + ", ".join(fields) + ") "
         query += "VALUES (" + ", ".join(pre_vals) + ")"
         return query
         
@@ -264,13 +255,20 @@ class Db:
             data (dict): data to insert into Preligens db. Should contain one
                          row only (implement DataFrames for multiple inserts)
             table (str): table to insert data into
+
+        Note:
+            Could be simplified using SQLAlchemy
+            Could be simplified using a decorator for connection start & stop
         """
         self._connect()
 
-        # Insert data
-        self._cur = self._db.cursor()
+        # Build query
         query = self._build_query(table, data, insert=True)
-        self._cur.execute(query, data)
+        records = data.values.tolist()
+        
+        # Execute insert query
+        self._cur = self._db.cursor()
+        self._cur.executemany(query, records)
         self._db.commit()
         
         self._disconnect()
@@ -325,17 +323,9 @@ if __name__ == "__main__":
     api = Api(user="alexis", password="pssd_test_api")
     api.get_api_key()
     ships_positions = api.get_ships_positions(port_id='port_1',
-                        start_time=timedelta(weeks=-2))
+                                              start_time=timedelta(weeks=-2))
     
     # Push to Database
-    data = {'lat': 3.1435,
-            'lon': 8.345,
-            'timestamp': '2019-06-17T14:30:00Z',
-            'ship_id': 95125}
     table = 'ship-positions-table-to-be-populated-in-exercice'
     db = Db(user="alexis", password="pssd_test_db")
-    db.push_data(table, data)
-
-    # Debug
-    query = db._build_query(table, data)
-    print(f'\n{query}\n')
+    db.push_data(table, ships_positions)
