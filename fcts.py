@@ -26,6 +26,32 @@ def load_data(path, idx_col='id', date_col='date', verbose=True):
     return data
 
 
+def extract_breach(outliers, counts, stats, ship, bound_type='bound_min'):
+    """
+    Extract counts that breached min or max boundaries
+    """
+    if bound_type == 'bound_min':
+        ma_breach = counts.loc[ship] < stats[bound_type].loc[ship]
+    elif bound_type == 'bound_max':
+        ma_breach = counts.loc[ship] > stats[bound_type].loc[ship]
+    else:
+        raise ValueError
+
+    rec = counts[ship][ma_breach]
+
+    if len(rec) > 0:
+        for date, count in rec.items():
+            breach_pct = round(100 * (count - stats[bound_type].loc[ship]) / stats[bound_type].loc[ship], 2)
+            d = {'ship_type': ship,
+                'date': date,
+                'count': count,
+                'bound_type': bound_type,
+                'breach_pct': breach_pct}
+            outliers = outliers.append(d, ignore_index=True)
+
+    return outliers
+
+
 def detect_large_variations(data_t0, data_t1, threshold=2, verbose=True):
     """
     Detect large variations
@@ -44,7 +70,6 @@ def detect_large_variations(data_t0, data_t1, threshold=2, verbose=True):
     # Compute ships counts over time
     counts = data_t0.groupby(['ship_type', 'date']).count()['lon']
     stats = counts.groupby('ship_type').describe()
-
     # Compute boundaries
     stats['bound_max'] = stats['mean'] + threshold * stats['std']
     stats['bound_min'] = stats['mean'] - threshold * stats['std']
@@ -53,39 +78,14 @@ def detect_large_variations(data_t0, data_t1, threshold=2, verbose=True):
 
     # Compute new counts
     counts_new = data_t1.groupby(['ship_type', 'date']).count()['lon']
-
     # Record boundaries breaches
     outliers = pd.DataFrame(columns=['date', 'ship_type', 'count', 'breach_pct', 'bound_type'])
 
     for ship in stats.index:
-        # Record counts above max boundary
-        ma_above_max = counts_new.loc[ship] > stats['bound_max'].loc[ship]
-        rec = counts_new[ship][ma_above_max]
-        if len(rec) > 0:
-            for date, count in rec.items():
-                breach_pct = round(100 * (count - stats['bound_max'].loc[ship]) / stats['bound_max'].loc[ship], 2)
-                d = {'ship_type': ship,
-                    'date': date,
-                    'count': count,
-                    'bound_type': 'max',
-                    'breach_pct': breach_pct}
-                outliers = outliers.append(d, ignore_index=True)
-
-        # Record counts below min boundary
-        ma_below_max = counts_new.loc[ship] < stats['bound_min'].loc[ship]
-        rec = counts_new[ship][ma_below_max]
-        if len(rec) > 0:
-            for date, count in rec.items():
-                breach_pct = round(100 * (count - stats['bound_min'].loc[ship]) / stats['bound_min'].loc[ship], 2)
-                d = {'ship_type': ship,
-                    'date': date,
-                    'count': count,
-                    'bound_type': 'min',
-                    'breach_pct': breach_pct}
-                outliers = outliers.append(d, ignore_index=True)
+        outliers = extract_breach(outliers, counts_new, stats, ship, 'bound_min')
+        outliers = extract_breach(outliers, counts_new, stats, ship, 'bound_max')
 
     # ==== Return alerts ====
-
     return outliers
 
 
