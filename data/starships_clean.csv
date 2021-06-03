@@ -1,4 +1,4 @@
-id,level2,stream_date,lon,lat
+id,ship_type,date,lon,lat
 1,TIE Fighter,2018-05-07 12:00:00,-19.9501445,27.552059
 2,TIE bomber,2018-05-07 12:00:00,-19.9259155,27.527897
 3,TIE bomber,2018-05-07 12:00:00,-19.9273735,27.527464
