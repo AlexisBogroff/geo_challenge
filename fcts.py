@@ -4,10 +4,6 @@ Functions for geo challenge alert system
 from datetime import datetime
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import georaster as gr
-sns.set_theme()
 
 
 class Detector:
@@ -17,12 +13,24 @@ class Detector:
     def __init__(self, data_t0, data_t1):
         self.data_t0 = data_t0
         self.data_t1 = data_t1
+        self.count_outliers = pd.DataFrame(columns=['date',
+                                                    'ship_type',
+                                                    'count',
+                                                    'breach_pct',
+                                                    'bound_type'])
 
 
-    def _extract_breach(self, outliers, counts, stats, ship, bound_type='bound_min'):
+    def _extract_breach(self, counts, stats, ship, bound_type='bound_min'):
         """
         Extract counts that breached min or max boundaries
+
+        Args:
+            counts:
+            stats (DataFrame): statistics (mean, std) of counts over time
+            ship (str): ship type to filter data
+            bound_type (str): should be one of bound_min or bound_max
         """
+        # Build mask to filter outliers
         if bound_type == 'bound_min':
             ma_breach = counts.loc[ship] < stats[bound_type].loc[ship]
         elif bound_type == 'bound_max':
@@ -30,19 +38,24 @@ class Detector:
         else:
             raise ValueError
 
-        rec = counts[ship][ma_breach]
+        # Get records that breached the boundary
+        records = counts[ship][ma_breach]
 
-        if len(rec) > 0:
-            for date, count in rec.items():
-                breach_pct = round(100 * (count - stats[bound_type].loc[ship]) / stats[bound_type].loc[ship], 2)
-                d = {'ship_type': ship,
-                    'date': date,
-                    'count': count,
-                    'bound_type': bound_type,
-                    'breach_pct': breach_pct}
-                outliers = outliers.append(d, ignore_index=True)
+        if len(records) > 0:
+            # Append to previous records (and add breach percentage)
+            for date, count in records.items():
 
-        return outliers
+                bound = stats[bound_type].loc[ship]
+                breach_pct = (count - bound) / bound  * 100
+                breach_pct_rounded = round(breach_pct, 2)
+
+                rec = {'ship_type': ship,
+                       'date': date,
+                       'count': count,
+                       'bound_type': bound_type,
+                       'breach_pct': breach_pct_rounded}
+
+                self.count_outliers = self.count_outliers.append(rec, ignore_index=True)
 
 
     def detect_large_variations(self, threshold=2, verbose=True):
@@ -59,23 +72,21 @@ class Detector:
         # Compute ships counts over time on reference data
         counts = self.data_t0.groupby(['ship_type', 'date']).count()['lon']
         stats = counts.groupby('ship_type').describe()
+
         # Compute boundaries
         stats['bound_max'] = stats['mean'] + threshold * stats['std']
         stats['bound_min'] = stats['mean'] - threshold * stats['std']
 
         # Compute counts from new data
         counts_new = self.data_t1.groupby(['ship_type', 'date']).count()['lon']
+
         # Record boundaries breaches
-        outliers = pd.DataFrame(columns=['date', 'ship_type', 'count', 'breach_pct', 'bound_type'])
-
         for ship in stats.index:
-            outliers = self._extract_breach(outliers, counts_new, stats, ship, 'bound_min')
-            outliers = self._extract_breach(outliers, counts_new, stats, ship, 'bound_max')
+            self._extract_breach(counts_new, stats, ship, 'bound_min')
+            self._extract_breach(counts_new, stats, ship, 'bound_max')
 
-        # ==== Return alerts ====
         if verbose:
-            print(outliers)
-        return outliers
+            print(self.count_outliers)
 
 
     def detect_static_objects(self, verbose=True):
@@ -105,6 +116,22 @@ class Detector:
         raise NotImplementedError
 
 
+    def export(self, f_name='alerts', ext='csv'):
+        """
+        Save data to csv file
+
+        Args:
+            data (DataFrame): Tabular data (2D)
+            f_name: file name
+            ext: file extension
+
+        Note:
+            Only export count_outliers for now. Others not yet implemented.
+        """
+        f_name += '_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.count_outliers.to_csv(f_name + '.' + ext)
+
+
 
 def load_data(path, idx_col='id', date_col='date', verbose=True):
     """
@@ -121,16 +148,3 @@ def load_data(path, idx_col='id', date_col='date', verbose=True):
     """
     data = pd.read_csv(path, index_col=idx_col, parse_dates=[date_col])
     return data
-
-
-def save_to_file(data, f_name):
-    """
-    Save data to csv file
-
-    Args:
-        data (DataFrame): Tabular data (2D)
-        f_name: file name
-    """
-    f_name += str(datetime.now())
-    extension = '.csv'
-    data.to_csv(f_name + extension)
