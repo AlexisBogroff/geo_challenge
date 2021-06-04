@@ -129,6 +129,7 @@ class Detector:
             Only export count_outliers for now. Others not yet implemented.
         """
         f_name += '_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.count_outliers.sort_values('date', ascending=False, inplace=True)
         self.count_outliers.to_csv(f_name + '.' + ext)
 
 

@@ -1,8 +1,8 @@
 ,date,ship_type,count,breach_pct,bound_type
-0,2019-05-08 12:00:00,Civilian Star Shuttle,3,4.97,bound_max
 1,2019-11-08 12:00:00,Civilian Star Shuttle,3,4.97,bound_max
-2,2019-04-27 12:00:00,Imperial SpaceShuttle,9,-9.97,bound_min
-3,2019-01-21 12:00:00,Imperial SpaceShuttle,12,0.96,bound_max
-4,2019-04-27 12:00:00,TIE Fighter,23,1.1,bound_max
-5,2019-01-21 12:00:00,TIE bomber,6,-5.03,bound_min
 6,2019-07-31 12:00:00,TIE bomber,5,-20.86,bound_min
+0,2019-05-08 12:00:00,Civilian Star Shuttle,3,4.97,bound_max
+2,2019-04-27 12:00:00,Imperial SpaceShuttle,9,-9.97,bound_min
+4,2019-04-27 12:00:00,TIE Fighter,23,1.1,bound_max
+3,2019-01-21 12:00:00,Imperial SpaceShuttle,12,0.96,bound_max
+5,2019-01-21 12:00:00,TIE bomber,6,-5.03,bound_min
