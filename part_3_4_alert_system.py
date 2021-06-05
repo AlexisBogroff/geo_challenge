@@ -7,8 +7,8 @@ Alerts:
 - (not implemented) rare appearance of a ship (if a droids is detected)
 - (not implemented) new areas organization (evol num clusters, shift position)
 """
-import settings as stng
-from fcts import Detector, load_data
+import part_3_4_settings as stng
+from part_3_4_fcts import Detector, load_data
 
 # Load data
 data_t0 = load_data(stng.PATH_DATA_TOT, date_max=stng.DATE_MIN)
