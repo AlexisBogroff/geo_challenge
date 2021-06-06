@@ -1,5 +1,5 @@
 """
-Raise alerts on sensible metrics
+Report alerts on sensible metrics
 
 Alerts:
 - variation of ships count (by type)
