@@ -12,9 +12,8 @@ from part_3_4_fcts import Detector, load_data
 
 # Load data
 data_t0 = load_data(stng.PATH_DATA_TOT, date_max=stng.DATE_MIN)
-data_t1 = load_data(stng.PATH_DATA_TOT, date_min=stng.DATE_MIN, date_max=stng.DATE_MAX)
-# data_t0 = load_data(stng.PATH_DATA_SNAP_1)
-# data_t1 = load_data(stng.PATH_DATA_SNAP_2)
+data_t1 = load_data(stng.PATH_DATA_TOT, date_min=stng.DATE_MIN,
+                                        date_max=stng.DATE_MAX)
 
 # Init detector
 detector = Detector(data_t0, data_t1)
