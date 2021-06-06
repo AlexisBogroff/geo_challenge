@@ -91,17 +91,23 @@ class Detector:
             print(self.count_outliers)
 
 
-    def detect_static_objects(self, n_periods_min=1, smooth=None, verbose=True):
+    def detect_static_objects(self, n_periods_min=11, smooth=None, verbose=True):
         """
         Detect static objects on the given period
 
         Args:
             n_periods: number of inter periods. For example:
                        - n_periods_min=1: detects all static ships (static
-                                          over any duration).
-                       - n_periods_min=2: detects ships that were static for
-                                          at least 2 periods, i.e. 3 dates.
-            smooth (int): precision to round the latitude and longitude
+                                          over any duration, i.e. at least
+                                          1 period = 2 dates ± 2 weeks ).
+                       - n_periods_min=11: detects ships that were static for
+                                          at least 11 per = 12 dates = 6 months
+                                          (6=12*2/4).
+            smooth (int): precision to round the latitude and longitude.
+                          - 6: 0.1m precision
+                          - 5: 1m precision
+                          - 4: 10m precision
+                          Default 5: seems the most appropriate for the case.
             verbose (bool): display results
 
         Returns:
@@ -109,10 +115,10 @@ class Detector:
 
         Note:
             Be careful as a low precision might consider different ships as
-            a unique ship. Thus, it might consider that a ship has been static
-            over multiple periods, althought the comparison is made btw 2 snaps.
-            To keep information on the date, use the more restrictive function
-            detect_static_objects_2_snaps.
+            a unique ship. Thus, it might wrongly consider that a ship has
+            been static over multiple periods.
+
+            Average gap between snapshots: ±2 weeks
         """
         AGG_COLS = ['lon', 'lat', 'ship_type']
 
@@ -137,37 +143,6 @@ class Detector:
 
         if verbose:
             print(f'\n\nStatic ships over at least {n_periods_min} periods:\n')
-            print(static)
-
-
-    def detect_static_objects_2_snaps(self, smooth=None, verbose=True):
-        """
-        Detect static objects between two snapshots
-
-        Args:
-            smooth (int): precision to round the latitude and longitude
-            verbose (bool): display results
-
-        Returns:
-            Static objects ordered by duration
-
-        Note:
-            Do not use on more than two snapshots at a time, as results
-            might not be as expected. Idem when using low precision (smooth).
-        """
-        data_t0 = self.data_t0.copy()
-        data_t1 = self.data_t1.copy()
-
-        if smooth:
-            data_t0 = smooth_positions(data_t0, threshold=smooth)
-            data_t1 = smooth_positions(data_t1, threshold=smooth)
-
-        # Get static ships
-        static = pd.merge(data_t0, data_t1, how='inner', on=['lon', 'lat'])
-        self.static_ships = static
-
-        if verbose:
-            print('\n\nStatic ships between 2 periods:\n')
             print(static)
 
 
