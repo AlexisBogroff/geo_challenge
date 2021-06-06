@@ -3,9 +3,7 @@ Raise alerts on sensible metrics
 
 Alerts:
 - variation of ships count (by type)
-- static ships
-- (not implemented) rare appearance of a ship (if a droids is detected)
-- (not implemented) new areas organization (evol num clusters, shift position)
+- static ships between two snaps, or on the given period
 """
 import part_3_4_settings as stng
 from part_3_4_fcts import Detector, load_data
