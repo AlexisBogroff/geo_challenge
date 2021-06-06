@@ -171,21 +171,7 @@ class Detector:
             print(static)
 
 
-    def detect_rare_objects(self, threshold=10, verbose=True):
-        """
-        Detect rare objects
-
-        Args:
-            threshold: number of periods allowed
-            verbose (bool): activate verbosity
-
-        Returns:
-            Rare objects ordered by duration
-        """
-        raise NotImplementedError
-
-
-    def export(self, f_name='alerts', ext='csv', outliers=True, static=True):
+    def export(self, path, ext='csv', outliers=True, static=True):
         """
         Save data to csv file
 
@@ -197,7 +183,7 @@ class Detector:
         Note:
             Only export count_outliers for now. Others not yet implemented.
         """
-        f_name += '_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+        f_name = path + datetime.now().strftime("%Y%m%d_%H%M%S")
 
         if outliers:
             # Export outliers
@@ -210,25 +196,6 @@ class Detector:
             f_name_static = f_name + '_static'
             self.static_ships.to_csv(f_name_static + '.' + ext)
 
-
-
-def load_data(path, idx_col='id', date_col='date', verbose=True, **kwargs):
-    """
-    Load data
-
-    Args:
-        path (str): path to data file
-        idx_col (str): column to use as index
-        date_col (str): column to cast as datetime
-        verbose (bool): activate verbosity
-        kwargs: date parameters of filter_on_date
-
-    Returns:
-        data (DataFrame)
-    """
-    data = pd.read_csv(path, index_col=idx_col, parse_dates=[date_col])
-    data = filter_on_date(data, date_col, **kwargs)
-    return data
 
 
 def filter_on_date(data, date_col, date_min=None, date_max=None):
@@ -250,6 +217,25 @@ def filter_on_date(data, date_col, date_min=None, date_max=None):
     if date_max:
         ma_max = data[date_col] < date_max
         data = data[ma_max]
+    return data
+
+
+def load_data(path, idx_col='id', date_col='date', verbose=True, **kwargs):
+    """
+    Load data
+
+    Args:
+        path (str): path to data file
+        idx_col (str): column to use as index
+        date_col (str): column to cast as datetime
+        verbose (bool): activate verbosity
+        kwargs: date parameters of filter_on_date
+
+    Returns:
+        data (DataFrame)
+    """
+    data = pd.read_csv(path, index_col=idx_col, parse_dates=[date_col])
+    data = filter_on_date(data, date_col, **kwargs)
     return data
 
 

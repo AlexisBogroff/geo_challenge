@@ -19,7 +19,6 @@ detector = Detector(data_t0, data_t1)
 # Run scans
 detector.detect_large_variations(threshold=1.7)
 detector.detect_static_objects(n_periods_min=1, smooth=5)
-detector.detect_static_objects_2_snaps(smooth=3)
 
 # Save alerts to file
 detector.export(stng.PATH_ALERTS)
